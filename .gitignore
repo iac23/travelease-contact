@@ -1,0 +1,27 @@
+# Terraform
+*.tfvars
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+
+# Frontend Credentials
+frontend/config.js
+frontend/env.js
+
+# Environment files (catch-all)
+.env
+.env.local
+*.env
+
+# AWS Credentials
+.aws/
+Credentials
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
