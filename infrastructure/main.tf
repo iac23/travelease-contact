@@ -486,6 +486,243 @@ resource "aws_dynamodb_table" "submissions" {
   } 
 }
 
+# OIDC Config for CI/CD pipeline with Github Actions
+
+resource "aws_iam_openid_connect_provider" "default" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com.",
+  ]
+}
+
+# IAM Role for GitHub to assume on specific workflow
+
+resource "aws_iam_role" "github_workflow" {
+  name = "github_role"
+
+# IAM Role Assume Policy for GitHub
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Sid    = "GitHubActionsRole"
+        Principal = {       # the principal is a federated identity
+          Federated = aws_iam_openid_connect_provider.default.arn
+        }
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:sub" = "repo:iac23/travelease-contact:ref:refs/heads/main"
+          }
+        }
+      },
+    ]
+  })
+
+  tags = {
+    tag-key = "tag-value"
+  }
+}
+
+# IAM Policy for IAM Role for GitHub Actions
+resource "aws_iam_policy" "github_oidc_policy" {
+  name        = "github-oidc-policy"
+  path        = "/"
+  description = "OIDC provider GitHub Actions IAM policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "S3FrontendDeploy"
+        Effect   = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
+          "arn:aws:s3:::travelease-web-bucket/*"
+        ]
+      },      # comma separates by closing one block and starting a new one
+
+      # BACKEND: Lambda Management
+      {
+        Sid = "LambdaManagement"
+        Effect = "Allow"
+        Action = [
+          "lambda:CreateFunction",
+          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:GetFunction",
+          "lambda:AddPermission",
+          "lambda:RemovePermission",
+          "lambda:GetPolicy"
+        ]
+        Resource = [
+          "arn:aws:lambda:*:*:function:travelease-*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
+        ]
+      },
+    
+      # BACKEND: API Gateway Management
+      {
+      Sid    = "APIGatewayManagement"
+      Effect = "Allow"
+      Action = [
+        "apigateway:GET",     # these aren't HTTP methods, they map directly to AWS API Calls TF makes
+        "apigateway:POST",
+        "apigateway:PUT",
+        "apigateway:PATCH"
+      ]
+      Resource = "arn:aws:apigateway:us-east-1::/restapis/*"
+    },
+
+      # BACKEND: DynamoDB management
+    {
+      Sid    = "DynamoDBManagement"
+      Effect = "Allow"
+      Action = [
+        "dynamodb:CreateTable",
+        "dynamodb:DescribeTable",
+        "dynamodb:UpdateTable",
+        "dynamodb:ListTables",
+        "dynamodb:DescribeTimeToLive",
+        "dynamodb:UpdateTimeToLive",
+        "dynamodb:DescribeContinuousBackups",
+        "dynamodb:UpdateContinuousBackups",
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:TagResource",
+        "dynamodb:UntagResource"
+      ]
+      Resource = "arn:aws:dynamodb:us-east-1:*:table/value-*"
+    },
+
+      # BACKEND: Secrets Manager 
+    {
+      Sid    = "SecretsManagerAccess"
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:CreateSecret",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:TagResource"
+      ]
+      Resource = "arn:aws:secretsmanager:us-east-1:*:secret:travelease/*"
+    },
+
+      # BACKEND: CloudFront management
+
+    {
+      Sid    = "CloudFrontManagement"
+      Effect = "Allow"
+      Action = [
+        "cloudfront:CreateDistribution",
+        "cloudfront:GetDistribution",
+        "cloudfront:UpdateDistribution",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:ListDistributions",
+        "cloudfront:CreateCloudFrontOriginAccessIdentity",
+        "cloudfront:GetCloudFrontOriginAccessIdentity",
+        "cloudfront:TagResource"
+      ]
+      Resource = "arn:aws:cloudfront::675769453941:distribution/E1J02HSEWB11X6"
+    },
+
+      # BACKEND: IAM management
+
+    {
+      Sid    = "IAMManagement"
+      Effect = "Allow"
+      Action = [
+        "iam:CreateRole",
+        "iam:GetRole",
+        "iam:UpdateRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:CreatePolicy",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:CreatePolicyVersion",
+        "iam:ListPolicyVersions",
+        "iam:PassRole",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:GetOpenIDConnectProvider",
+        "iam:TagOpenIDConnectProvider"
+      ]
+      Resource = [
+        "arn:aws:iam::*:role/travelease-*",
+        "arn:aws:iam::*:role/github_role",
+        "arn:aws:iam::*:policy/travelease-*",
+        "arn:aws:iam::*:policy/GitHub*",
+        "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
+      ]
+    },
+
+      # BACKEND: CloudWatch monitoring 
+
+    {
+      Sid    = "CloudWatchManagement"
+      Effect = "Allow"
+      Action = [
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:DeleteAlarms",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "logs:CreateLogGroup",
+        "logs:DescribeLogGroups",
+        "logs:PutRetentionPolicy",
+        "logs:DescribeLogStreams",
+        "logs:ListTagsLogGroup",
+        "logs:TagLogGroup"
+      ]
+      Resource = [
+        "arn:aws:cloudwatch:us-east-1:*:alarm:travelease-*",
+        "arn:aws:logs:us-east-1:*:log-group:/aws/lambda/travelease-*"
+      ]
+    },
+
+      # BACKEND: SNS notifications
+    {
+      Sid    = "SNSManagement"
+      Effect = "Allow"
+      Action = [
+        "sns:CreateTopic",
+        "sns:GetTopicAttributes",
+        "sns:SetTopicAttributes",
+        "sns:Subscribe",
+        "sns:GetSubscriptionAttributes",
+        "sns:Unsubscribe",
+        "sns:ListSubscriptionsByTopic",
+        "sns:ListTagsForResource",
+        "sns:TagResource"
+      ]
+      Resource = "arn:aws:sns:us-east-1:*:travelease-*"
+    },
+
+    ]   # closes the statement
+  })    # closes the policy = jsonencode({
+}       # closes the IAM policy resource
+
+# Attach the Policy to the IAM Role 
+resource "aws_iam_role_policy_attachment" "github-attach" {
+  role       = aws_iam_role.github_workflow.name
+  policy_arn = aws_iam_policy.github_oidc_policy.arn
+}
+
 
 # Outputs for important resource values after deployment
 
