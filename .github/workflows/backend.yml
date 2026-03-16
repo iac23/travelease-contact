@@ -1,0 +1,48 @@
+name: Deploy Backend Infrastructure
+
+on: 
+  push:
+    branches: 
+      - main
+    paths:
+      - 'infrastructure/**'
+      - 'lambda/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE.ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: infrastructure/
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infrastructure/
+        run: terraform plan -out=tfplan
+
+      - name: Show Plan Output
+        working-directory: infrastructure/
+        run: terraform show tfplan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        workfing-directory: infrastructure/
+        run: terraform apply -auto-approve tfplan
+
