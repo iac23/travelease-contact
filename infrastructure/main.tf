@@ -529,7 +529,8 @@ resource "aws_iam_role" "github_workflow" {
   }
 }
 
-# IAM Policy for IAM Role for GitHub Actions
+# IAM Policy for IAM Role for GitHub Actions - Terraform
+
 resource "aws_iam_policy" "github_oidc_policy" {
   name        = "github-oidc-policy"
   path        = "/"
