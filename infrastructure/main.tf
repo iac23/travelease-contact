@@ -497,7 +497,7 @@ resource "aws_iam_openid_connect_provider" "default" {
   ]
 }
 
-# OIDC audience matches now 3/16
+# OIDC audience matches now
 # IAM Role for GitHub to assume on specific workflow
 
 resource "aws_iam_role" "github_workflow" {
@@ -554,6 +554,24 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "arn:aws:s3:::travelease-web-bucket/*"
         ]
       },      # comma separates by closing one block and starting a new one
+      
+
+      # BACKEND: Terraform state S3 bucket access
+
+      {
+      Sid    = "TerraformStateBucket"
+      Effect = "Allow"
+      Action = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ]
+      Resource = [
+        "arn:aws:s3:::travelease-tf-state",
+        "arn:aws:s3:::travelease-tf-state/*"
+      ]
+
+      },
 
       # BACKEND: Lambda Management
       {
