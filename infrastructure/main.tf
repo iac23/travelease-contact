@@ -556,7 +556,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
       },      # comma separates by closing one block and starting a new one
       
 
-      # BACKEND: Terraform state S3 bucket access
+      # BACKEND: Terraform state S3 bucket access -- Newly added 3/17
 
       {
       Sid    = "TerraformStateBucket"
