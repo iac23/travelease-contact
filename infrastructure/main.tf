@@ -486,6 +486,7 @@ resource "aws_dynamodb_table" "submissions" {
   } 
 }
 
+# Newly added resources 3/15 pushed to main
 # OIDC Config for CI/CD pipeline with Github Actions
 
 resource "aws_iam_openid_connect_provider" "default" {
