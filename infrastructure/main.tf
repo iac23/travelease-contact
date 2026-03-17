@@ -497,7 +497,7 @@ resource "aws_iam_openid_connect_provider" "default" {
   ]
 }
 
-# OIDC audience matches now
+# OIDC audience matches now 3/16
 # IAM Role for GitHub to assume on specific workflow
 
 resource "aws_iam_role" "github_workflow" {
