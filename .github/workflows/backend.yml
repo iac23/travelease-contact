@@ -43,6 +43,6 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        workfing-directory: infrastructure/
+        working-directory: infrastructure/
         run: terraform apply -auto-approve tfplan
 
