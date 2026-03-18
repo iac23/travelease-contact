@@ -1,12 +1,21 @@
 name: Deploy Backend Infrastructure
 
+# Trigger 1 - runs terraform plan on Pull Request (for reviewer)
 on: 
+  pull_request:
+      branches: 
+        - main
+      paths:
+        - 'infrastructure/**'
+        - 'lambda/**'
+
+# Trigger 2 - runs on terraform apply (merge to main)
   push:
-    branches: 
-      - main
-    paths:
-      - 'infrastructure/**'
-      - 'lambda/**'
+      branches:
+        - main
+      paths:
+        - 'infrastructure/**'
+        - 'lambda/**'
 
 permissions:
   id-token: write
@@ -37,13 +46,19 @@ jobs:
       - name: Terraform Plan
         working-directory: infrastructure/
         run: terraform plan -out=tfplan
+        env:
+          TF_VAR_BUSINESS_EMAIL: ${{ secrets.BUSINESS_EMAIL }}
 
       - name: Show Plan Output
         working-directory: infrastructure/
         run: terraform show tfplan
 
+# Runs ONLY when merged to main 
+
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: infrastructure/
         run: terraform apply -auto-approve tfplan
+        env:
+          TF_VAR_BUSINESS_EMAIL: ${{ secrets.BUSINESS_EMAIL }}
 
