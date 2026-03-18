@@ -516,10 +516,11 @@ resource "aws_iam_role" "github_workflow" {
         Principal = {       # the principal is a federated identity
           Federated = aws_iam_openid_connect_provider.default.arn
         }
+        # Updated condition block: switched to StringLike and sub value ends in wildcard
         Condition = {
-          StringEquals = {
+          StringLike = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:sub" = "repo:iac23/travelease-contact:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:iac23/travelease-contact:*"
           }
         }
       },
