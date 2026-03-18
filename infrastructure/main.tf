@@ -436,6 +436,7 @@ resource "aws_lambda_function" "travelease_lambda" {
 
   runtime = "python3.11"  # Because my Lambda code is Python
 
+# Added env variable secret in backend.yml workflow
 
   environment {
     variables = {      // stored in variables.tf
