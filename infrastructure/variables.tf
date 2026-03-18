@@ -1,11 +1,11 @@
 variable "business_email" {
     description = "TravelEase business email for notifications"
-    type        = string
+    default     = "iacbekker23@gmail.com"
 }
 
 variable "dynamodb_table" {
     description = "Database for customer query information"
-    type        = string
+    default     = "value"
 }
 
 variable "aws_region" {
