@@ -436,6 +436,7 @@ resource "aws_lambda_function" "travelease_lambda" {
 
   runtime = "python3.11"  # Because my Lambda code is Python
 
+# Added env variable secret in backend.yml workflow
 
   environment {
     variables = {      // stored in variables.tf
@@ -515,10 +516,12 @@ resource "aws_iam_role" "github_workflow" {
         Principal = {       # the principal is a federated identity
           Federated = aws_iam_openid_connect_provider.default.arn
         }
+        
+        # Updated condition block: Switched to StringLike and sub value ends in wildcard
         Condition = {
-          StringEquals = {
+          StringLike = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:sub" = "repo:iac23/travelease-contact:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:iac23/travelease-contact:*"
           }
         }
       },
