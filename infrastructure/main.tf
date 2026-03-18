@@ -517,7 +517,7 @@ resource "aws_iam_role" "github_workflow" {
           Federated = aws_iam_openid_connect_provider.default.arn
         }
         
-        # Updated condition block: Switched to StringLike and sub value ends in wildcard
+        # Updated condition block: Switched to StringLike and subject value ends in wildcard "*"
         Condition = {
           StringLike = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
