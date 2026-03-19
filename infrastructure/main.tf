@@ -562,7 +562,8 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "s3:GetBucketCORS",             
           "s3:GetBucketVersioning",       
           "s3:GetEncryptionConfiguration",
-          "s3:GetBucketPublicAccessBlock"
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetBucketAcl"
         ]
         Resource = [
           "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
@@ -608,7 +609,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "lambda:GetPolicy",
         ]
         Resource = [
-          "arn:aws:lambda:*:*:function:travelease-*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
+          "arn:aws:lambda:*:*:function:travelease_*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
         ]
       },
     
