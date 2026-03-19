@@ -787,6 +787,127 @@ resource "aws_iam_role_policy_attachment" "github-attach" {
   policy_arn = aws_iam_policy.github_oidc_policy.arn
 }
 
+# SNS Topic Resource
+
+resource "aws_sns_topic" "travelease_alerts" {
+  name = "travelease-alerts"
+
+  tags = {
+    Project     = "TravelEase"
+    Environment = "production"
+  }
+}
+
+# SNS Email subscription
+
+resource "aws_sns_topic_subscription" "email_alert" {
+  topic_arn = aws_sns_topic.travelease_alerts.arn
+  protocol  = "email"
+  endpoint  = var.business_email
+}
+
+# CloudWatch Alarm 1 (Lambda error, duration and throttle)
+
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  alarm_name          = "travelease-lambda-errors"
+  alarm_description   = "Lambda function is throwing errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.travelease_lambda.function_name
+  }
+
+  alarm_actions = [aws_sns_topic.travelease_alerts.arn]
+
+  tags = {
+    Project     = "TravelEase"
+    Environment = "production"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
+  alarm_name          = "travelease-lambda-duration"
+  alarm_description   = "Lambda duration exceeding 45 seconds - approaching 60s timeout"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 45000    # milliseconds - 45 seconds
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.travelease_lambda.function_name
+  }
+
+  alarm_actions = [aws_sns_topic.travelease_alerts.arn]
+
+  tags = {
+    Project     = "TravelEase"
+    Environment = "production"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
+  alarm_name          = "travelease-lambda-throttles"
+  alarm_description   = "Lambda function is being throttled - submissions may be dropped"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Throttles"
+  namespace           = "AWS/Lambda"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.travelease_lambda.function_name
+  }
+
+  alarm_actions = [aws_sns_topic.travelease_alerts.arn]
+
+  tags = {
+    Project     = "TravelEase"
+    Environment = "production"
+  }
+}
+
+# CloudWatch Alarm 2 (DynamoDB Capacity Usage)
+resource "aws_cloudwatch_metric_alarm" "dynamodb_throttles" {
+  alarm_name          = "travelease-dynamodb-throttles"
+  alarm_description   = "DynamoDB write requests are being throttled"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "WriteThrottleEvents"
+  namespace           = "AWS/DynamoDB"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    TableName = aws_dynamodb_table.submissions.name
+  }
+
+  alarm_actions = [aws_sns_topic.travelease_alerts.arn]
+
+  tags = {
+    Project     = "TravelEase"
+    Environment = "production"
+  }
+}
+
+# DynamoDB Backup service
+
+
 
 # Outputs for important resource values after deployment
 
