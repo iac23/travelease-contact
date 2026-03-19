@@ -572,7 +572,9 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "s3:GetReplicationConfiguration",
           "s3:GetAccelerateConfiguration",
           "s3:GetBucketRequestPayment",
-          "s3:GetBucketObjectLockConfiguration"
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetBucket*"
+          
         ]
         Resource = [
           "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
