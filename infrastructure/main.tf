@@ -557,6 +557,12 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "s3:PutObject",
           "s3:ListBucket",
           "s3:DeleteObject",
+          "s3:GetBucketPolicy",           
+          "s3:GetBucketWebsite",          
+          "s3:GetBucketCORS",             
+          "s3:GetBucketVersioning",       
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock"
         ]
         Resource = [
           "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
@@ -615,9 +621,14 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "apigateway:POST",
         "apigateway:PUT",
         "apigateway:PATCH",
-        
+
       ]
-      Resource = "arn:aws:apigateway:us-east-1::/restapis/*"
+      Resource = [
+        "arn:aws:apigateway:us-east-1::/restapis/*",
+        "arn:aws:apigateway:us-east-1::/apikeys/*",     
+        "arn:aws:apigateway:us-east-1::/usageplans/*" 
+                 
+      ] 
     },
 
       # BACKEND: DynamoDB management
@@ -637,7 +648,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "dynamodb:TagResource",
         "dynamodb:UntagResource"
       ]
-      Resource = "arn:aws:dynamodb:us-east-1:*:table/value-*"
+      Resource = "arn:aws:dynamodb:us-east-1:*:table/value"
     },
 
       # BACKEND: Secrets Manager 
@@ -702,10 +713,11 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Resource = [
         "arn:aws:iam::*:role/travelease_lambda_role",
         "arn:aws:iam::*:role/github_role",
-        "arn:aws:iam::*:policy/travelease_lambda_role",
         "arn:aws:iam::*:policy/github-oidc-policy",
         "arn:aws:iam::*:policy/github*",
         "arn:aws:iam::*:policy/lambda-*",
+        "arn:aws:iam::*:policy/lambda_*",
+        "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
         "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
       ]
     },
