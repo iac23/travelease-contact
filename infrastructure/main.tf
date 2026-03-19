@@ -2,9 +2,14 @@ terraform {
     required_providers {
         aws = {
             source = "hashicorp/aws"
-            version = "~> 6.0"
+            version = "= 6.23.0"
+        }
+        archive = {
+          source = "hashicorp/archive"
+          version = "= 2.7.1"
         }
     }
+    required_version = ">= 1.14.0"
 }
 
 provider "aws" {
@@ -545,37 +550,40 @@ resource "aws_iam_policy" "github_oidc_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "S3FrontendDeploy"
+
+        # Both state file and static web S3 buckets
+        
+        Sid = "S3Access"
         Effect   = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
+          "s3:DeleteObject",
           "s3:ListBucket",
-          "s3:DeleteObject"
+          "s3:GetBucketPolicy",
+          "s3:GetBucketWebsite",
+          "s3:GetBucketCORS",
+          "s3:GetBucketVersioning",
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetBucketAcl",
+          "s3:GetBucketLogging",
+          "s3:GetLifecycleConfiguration",
+          "s3:GetReplicationConfiguration",
+          "s3:GetAccelerateConfiguration",
+          "s3:GetBucketRequestPayment",
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetBucket*"
+          
         ]
         Resource = [
           "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
-          "arn:aws:s3:::travelease-web-bucket/*"
+          "arn:aws:s3:::travelease-web-bucket/*",
+          "arn:aws:s3:::travelease-tf-state",
+          "arn:aws:s3:::travelease-tf-state/*"
         ]
       },      # comma separates by closing one block and starting a new one
-      
 
-      # BACKEND: Terraform state S3 bucket access -- Newly added 3/17
-
-      {
-      Sid    = "TerraformStateBucket"
-      Effect = "Allow"
-      Action = [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:ListBucket"
-      ]
-      Resource = [
-        "arn:aws:s3:::travelease-tf-state",
-        "arn:aws:s3:::travelease-tf-state/*"
-      ]
-
-      },
 
       # BACKEND: Lambda Management
       {
@@ -586,12 +594,17 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "lambda:UpdateFunctionCode",
           "lambda:UpdateFunctionConfiguration",
           "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration",
           "lambda:AddPermission",
           "lambda:RemovePermission",
-          "lambda:GetPolicy"
+          "lambda:GetPolicy",
+          "lambda:ListVersionsByFunction",
+          "lambda:GetFunctionCodeSigningConfig",
+          "lambda:ListAliases",
+          "lambda:GetRuntimeManagementConfig"       
         ]
         Resource = [
-          "arn:aws:lambda:*:*:function:travelease-*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
+          "arn:aws:lambda:*:*:function:travelease_*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
         ]
       },
     
@@ -603,9 +616,16 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "apigateway:GET",     # these aren't HTTP methods, they map directly to AWS API Calls TF makes
         "apigateway:POST",
         "apigateway:PUT",
-        "apigateway:PATCH"
+        "apigateway:PATCH",
+        "apigateway:DELETE"
+
       ]
-      Resource = "arn:aws:apigateway:us-east-1::/restapis/*"
+      Resource = [
+        "arn:aws:apigateway:us-east-1::/restapis/*",
+        "arn:aws:apigateway:us-east-1::/apikeys/*",     
+        "arn:aws:apigateway:us-east-1::/usageplans/*" 
+                 
+      ] 
     },
 
       # BACKEND: DynamoDB management
@@ -613,19 +633,22 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "DynamoDBManagement"
       Effect = "Allow"
       Action = [
-        "dynamodb:CreateTable",
-        "dynamodb:DescribeTable",
-        "dynamodb:UpdateTable",
-        "dynamodb:ListTables",
-        "dynamodb:DescribeTimeToLive",
-        "dynamodb:UpdateTimeToLive",
-        "dynamodb:DescribeContinuousBackups",
-        "dynamodb:UpdateContinuousBackups",
-        "dynamodb:ListTagsOfResource",
-        "dynamodb:TagResource",
-        "dynamodb:UntagResource"
+          "dynamodb:CreateTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:ListTables",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource",
+          "dynamodb:DescribeGlobalTable",
+          "dynamodb:ListGlobalTables"
       ]
-      Resource = "arn:aws:dynamodb:us-east-1:*:table/value-*"
+      Resource = "arn:aws:dynamodb:us-east-1:*:table/value"
     },
 
       # BACKEND: Secrets Manager 
@@ -633,11 +656,12 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "SecretsManagerAccess"
       Effect = "Allow"
       Action = [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:PutSecretValue",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:TagResource"
+          "secretsmanager:CreateSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:TagResource",
+          "secretsmanager:GetResourcePolicy"
       ]
       Resource = "arn:aws:secretsmanager:us-east-1:*:secret:travelease/*"
     },
@@ -648,14 +672,16 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "CloudFrontManagement"
       Effect = "Allow"
       Action = [
-        "cloudfront:CreateDistribution",
-        "cloudfront:GetDistribution",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:GetDistributionConfig",
-        "cloudfront:ListDistributions",
-        "cloudfront:CreateCloudFrontOriginAccessIdentity",
-        "cloudfront:GetCloudFrontOriginAccessIdentity",
-        "cloudfront:TagResource"
+          "cloudfront:CreateDistribution",
+          "cloudfront:GetDistribution",
+          "cloudfront:UpdateDistribution",
+          "cloudfront:DeleteDistribution",
+          "cloudfront:GetDistributionConfig",
+          "cloudfront:ListDistributions",
+          "cloudfront:TagResource",
+          "cloudfront:GetInvalidation",
+          "cloudfront:CreateInvalidation",
+          "cloudfront:ListTagsForResource"
       ]
       Resource = "arn:aws:cloudfront::675769453941:distribution/E1J02HSEWB11X6"
     },
@@ -666,32 +692,42 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "IAMManagement"
       Effect = "Allow"
       Action = [
-        "iam:CreateRole",
-        "iam:GetRole",
-        "iam:UpdateRole",
-        "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:GetRolePolicy",
-        "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies",
-        "iam:CreatePolicy",
-        "iam:GetPolicy",
-        "iam:GetPolicyVersion",
-        "iam:CreatePolicyVersion",
-        "iam:ListPolicyVersions",
-        "iam:PassRole",
-        "iam:TagRole",
-        "iam:UntagRole",
-        "iam:CreateOpenIDConnectProvider",
-        "iam:GetOpenIDConnectProvider",
-        "iam:TagOpenIDConnectProvider"
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:CreatePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:DeletePolicy",
+          "iam:CreatePolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:DeletePolicyVersion",
+          "iam:PassRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:GetOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider",
+          "iam:ListRoleTags",
+          "iam:ListInstanceProfilesForRole"
       ]
       Resource = [
-        "arn:aws:iam::*:role/travelease-*",
+        "arn:aws:iam::*:role/travelease_lambda_role",
         "arn:aws:iam::*:role/github_role",
-        "arn:aws:iam::*:policy/travelease-*",
-        "arn:aws:iam::*:policy/GitHub*",
+        "arn:aws:iam::*:policy/github-oidc-policy",
+        "arn:aws:iam::*:policy/github*",
+        "arn:aws:iam::*:policy/lambda-*",
+        "arn:aws:iam::*:policy/lambda_*",
+        "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
         "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
       ]
     },
@@ -702,17 +738,19 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "CloudWatchManagement"
       Effect = "Allow"
       Action = [
-        "cloudwatch:PutMetricAlarm",
-        "cloudwatch:DescribeAlarms",
-        "cloudwatch:DeleteAlarms",
-        "cloudwatch:GetMetricStatistics",
-        "cloudwatch:ListMetrics",
-        "logs:CreateLogGroup",
-        "logs:DescribeLogGroups",
-        "logs:PutRetentionPolicy",
-        "logs:DescribeLogStreams",
-        "logs:ListTagsLogGroup",
-        "logs:TagLogGroup"
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "logs:CreateLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:DeleteLogGroup",
+          "logs:PutRetentionPolicy",
+          "logs:DescribeLogStreams",
+          "logs:ListTagsLogGroup",
+          "logs:TagLogGroup",
+          "logs:ListTagsForResource"
       ]
       Resource = [
         "arn:aws:cloudwatch:us-east-1:*:alarm:travelease-*",
@@ -725,15 +763,16 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Sid    = "SNSManagement"
       Effect = "Allow"
       Action = [
-        "sns:CreateTopic",
-        "sns:GetTopicAttributes",
-        "sns:SetTopicAttributes",
-        "sns:Subscribe",
-        "sns:GetSubscriptionAttributes",
-        "sns:Unsubscribe",
-        "sns:ListSubscriptionsByTopic",
-        "sns:ListTagsForResource",
-        "sns:TagResource"
+          "sns:CreateTopic",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes",
+          "sns:DeleteTopic",
+          "sns:Subscribe",
+          "sns:GetSubscriptionAttributes",
+          "sns:Unsubscribe",
+          "sns:ListSubscriptionsByTopic",
+          "sns:ListTagsForResource",
+          "sns:TagResource"
       ]
       Resource = "arn:aws:sns:us-east-1:*:travelease-*"
     },
