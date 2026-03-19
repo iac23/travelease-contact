@@ -2,9 +2,14 @@ terraform {
     required_providers {
         aws = {
             source = "hashicorp/aws"
-            version = "~> 6.0"
+            version = "= 6.23.0"
+        }
+        archive = {
+          source = "hashicorp/archive"
+          version = "= 2.7.1"
         }
     }
+    required_version = ">= 1.14.0"
 }
 
 provider "aws" {
@@ -551,7 +556,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
         ]
         Resource = [
           "arn:aws:s3:::travelease-web-bucket",   # S3 needs two resource entries: 1. bucket itself, 2. objects inside bucket
@@ -568,7 +573,13 @@ resource "aws_iam_policy" "github_oidc_policy" {
       Action = [
         "s3:GetObject",
         "s3:PutObject",
-        "s3:ListBucket"
+        "s3:ListBucket",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketWebsite",
+        "s3:GetBucketCORS",
+        "s3:GetBucketVersioning",
+        "s3:GetEncryptionConfiguration",
+        "s3:GetBucketPublicAccessBlock"
       ]
       Resource = [
         "arn:aws:s3:::travelease-tf-state",
@@ -588,7 +599,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "lambda:GetFunction",
           "lambda:AddPermission",
           "lambda:RemovePermission",
-          "lambda:GetPolicy"
+          "lambda:GetPolicy",
         ]
         Resource = [
           "arn:aws:lambda:*:*:function:travelease-*"   # using a wildcard at end of ARN means only Lambda functions that start with travelease
@@ -603,7 +614,8 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "apigateway:GET",     # these aren't HTTP methods, they map directly to AWS API Calls TF makes
         "apigateway:POST",
         "apigateway:PUT",
-        "apigateway:PATCH"
+        "apigateway:PATCH",
+        
       ]
       Resource = "arn:aws:apigateway:us-east-1::/restapis/*"
     },
@@ -688,11 +700,12 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "iam:TagOpenIDConnectProvider"
       ]
       Resource = [
-        "arn:aws:iam::*:role/travelease-*",
+        "arn:aws:iam::*:role/travelease_lambda_role",
         "arn:aws:iam::*:role/github_role",
-        "arn:aws:iam::*:policy/travelease-*",
+        "arn:aws:iam::*:policy/travelease_lambda_role",
         "arn:aws:iam::*:policy/github-oidc-policy",
-        "arn:aws:iam::*:policy/GitHub*",
+        "arn:aws:iam::*:policy/github*",
+        "arn:aws:iam::*:policy/lambda-*",
         "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
       ]
     },
