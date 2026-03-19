@@ -691,6 +691,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
         "arn:aws:iam::*:role/travelease-*",
         "arn:aws:iam::*:role/github_role",
         "arn:aws:iam::*:policy/travelease-*",
+        "arn:aws:iam::*:policy/github-oidc-policy",
         "arn:aws:iam::*:policy/GitHub*",
         "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
       ]
