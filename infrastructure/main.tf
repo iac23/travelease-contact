@@ -743,6 +743,7 @@ resource "aws_iam_policy" "github_oidc_policy" {
           "cloudwatch:DeleteAlarms",
           "cloudwatch:GetMetricStatistics",
           "cloudwatch:ListMetrics",
+          "cloudwatch:ListTagsForResource",
           "logs:CreateLogGroup",
           "logs:DescribeLogGroups",
           "logs:DeleteLogGroup",
