@@ -481,6 +481,8 @@ resource "aws_dynamodb_table" "submissions" {
   tags = {
     Name      = "production"
     Project   = "travelease"
+    Environment = "production"
+    ManagedBy = "Terraform"
   }
 
 # Good additional arguments for Production setup
@@ -905,10 +907,6 @@ resource "aws_cloudwatch_metric_alarm" "dynamodb_throttles" {
     Environment = "production"
   }
 }
-
-# DynamoDB Backup service
-
-
 
 # Outputs for important resource values after deployment
 
