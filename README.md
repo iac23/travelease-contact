@@ -5,7 +5,7 @@ inquiries, generates AI-powered insights using the Claude API, and
 automates email delivery — all on AWS managed services with zero 
 server management.
 
-📄 View [https://medium.com/@dehanbekker23/travelease-ai-powered-serverless-contact-form-539cc2823496] for the full technical journey and SDLC breakdown
+📄 View the [Full Technical Documentation →](https://medium.com/@dehanbekker23/travelease-ai-powered-serverless-contact-form-539cc2823496) for the complete SDLC breakdown
 
 ---
 
@@ -20,7 +20,7 @@ with seasonal traffic spikes — without hiring a dedicated ops team.
 
 ## What I Built
 
-[![Architecture Diagram](diagramv2.png)]
+![Architecture Diagram](diagramv2.png)
 
 A fully serverless contact form backed by AWS that:
 
@@ -202,8 +202,8 @@ travelease-contact/
 
 ---
 
-## Let's Connect!
+## 🤝 Let's Connect!
 
 [![LinkedIn](https://img.shields.io/badge/LINKEDIN-DEHAN%20BEKKER-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/dehan-bekker)
 [![GitHub](https://img.shields.io/badge/GITHUB-IAC23-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/iac23)
-[![Medium](https://medium.com/@dehanbekker23)]
+[![Medium](https://img.shields.io/badge/MEDIUM-FULL%20DOCUMENTATION-12100E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@dehanbekker23/travelease-ai-powered-serverless-contact-form-539cc2823496)
